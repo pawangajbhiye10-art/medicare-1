@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediCare - Online Pharmacy & Medicine Delivery</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP NOTIFICATION TOAST -->
+  <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] transition-transform duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <span id="toast-msg" class="text-sm font-medium">Notification message</span>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="navigateTab('home')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+            <i class="fa-solid fa-notes-medical text-xl"></i>
+          </div>
+          <div>
+            <span class="text-xl font-bold tracking-tight text-slate-900">Medi<span class="text-brand-600">Care</span></span>
+            <span class="hidden sm:inline-block text-[10px] uppercase font-semibold bg-brand-50 text-brand-700 border border-brand-200 px-1.5 py-0.5 rounded ml-1">Pharmacy</span>
+          </div>
+        </div>
+
+        <!-- Search Bar (Desktop) -->
+        <div class="hidden md:flex flex-1 max-w-lg relative" id="header-search-container">
+          <input type="text" id="desktop-search" oninput="handleSearch(this.value)" placeholder="Search medicines, salt composition, wellness products..." 
+            class="w-full pl-10 pr-4 py-2 text-sm bg-slate-100 border border-transparent rounded-xl focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none transition-all">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+        </div>
+
+        <!-- Right Action Items -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Switch View (Customer / Admin) -->
+          <button onclick="toggleAppMode()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-all shadow-sm" id="mode-badge">
+            <i class="fa-solid fa-user-shield"></i>
+            <span id="mode-text">Admin Panel</span>
+          </button>
+
+          <!-- Cart Button -->
+          <button onclick="toggleCartDrawer(true)" class="relative p-2 text-slate-700 hover:text-brand-600 hover:bg-slate-100 rounded-xl transition-all">
+            <i class="fa-solid fa-cart-shopping text-lg"></i>
+            <span id="cart-counter" class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow">0</span>
+          </button>
+
+          <!-- User Menu / Login -->
+          <div id="auth-buttons-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div class="md:hidden pb-3 pt-1">
+        <div class="relative">
+          <input type="text" id="mobile-search" oninput="handleSearch(this.value)" placeholder="Search medicines & health products..." 
+            class="w-full pl-9 pr-3 py-2 text-sm bg-slate-100 border border-transparent rounded-xl focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ============================================== -->
+    <!-- VIEW: CUSTOMER APP -->
+    <!-- ============================================== -->
+    <div id="customer-view" class="space-y-8">
+      
+      <!-- Sub-Tabs: Browse Medicines / My Orders -->
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex gap-2">
+          <button id="tab-btn-home" onclick="navigateTab('home')" class="px-4 py-2 text-sm font-semibold rounded-lg bg-brand-600 text-white shadow-sm transition-all">
+            <i class="fa-solid fa-capsules mr-1.5"></i> Explore Medicines
+          </button>
+          <button id="tab-btn-orders" onclick="navigateTab('orders')" class="px-4 py-2 text-sm font-semibold rounded-lg bg-white text-slate-700 hover:bg-slate-100 transition-all border border-slate-200">
+            <i class="fa-solid fa-box-open mr-1.5"></i> My Orders & Tracking
+          </button>
+        </div>
+        <div class="text-xs text-slate-500 hidden sm:flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-brand-600"></i>
+          <span>100% Genuine Medicines • Fast Delivery</span>
+        </div>
+      </div>
+
+      <!-- HOME TAB: BANNER + CATEGORIES + MEDICINE GRID -->
+      <div id="tab-content-home" class="space-y-6">
+        
+        <!-- Promo Banner -->
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-700 via-brand-600 to-teal-500 text-white p-6 sm:p-8 shadow-lg shadow-brand-700/10">
+          <div class="max-w-xl space-y-2">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 backdrop-blur">Verified Pharmacy</span>
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Your Health, Delivered to Your Doorstep</h2>
+            <p class="text-brand-100 text-xs sm:text-sm">Order prescription and OTC medicines easily. Upload doctor's prescription for quick verification and doorstep delivery.</p>
+            <div class="pt-2 flex flex-wrap gap-4 text-xs font-medium text-brand-50">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> Delivery in 30 mins</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-certificate"></i> Certified Pharmacists</span>
+              <span class="flex items-center gap-1"><i class="fa-solid fa-tags"></i> Up to 25% Off</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-staff-snake absolute right-4 -bottom-6 text-white/10 text-9xl pointer-events-none hidden sm:block"></i>
+        </div>
+
+        <!-- Filter & Categories Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Category Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar" id="category-pills">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Prescription Required Filter Toggle -->
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="flex items-center cursor-pointer text-xs font-medium text-slate-700 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm hover:border-brand-300">
+              <input type="checkbox" id="rx-filter" onchange="toggleRxFilter(this.checked)" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+              <span class="ml-2 flex items-center gap-1"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Rx</span> Needs Prescription Only</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Medicine Listing Grid -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-lg" id="listing-heading">All Available Medicines</h3>
+            <span class="text-xs text-slate-500" id="item-count-text">Showing 0 items</span>
+          </div>
+          <div id="medicine-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+            <!-- Cards rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS & TRACKING TAB -->
+      <div id="tab-content-orders" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-900 text-xl">Order History & Live Tracking</h3>
+            <p class="text-xs text-slate-500">Track current orders, view verification updates, and see past orders.</p>
+          </div>
+        </div>
+        <div id="orders-list-container" class="space-y-4">
+          <!-- Orders rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- VIEW: ADMIN PANEL -->
+    <!-- ============================================== -->
+    <div id="admin-view" class="space-y-8 hidden">
+      
+      <!-- Admin Top Banner -->
+      <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">Admin Dashboard</span>
+            <span class="text-slate-400 text-xs">• MediCare Control Center</span>
+          </div>
+          <h2 class="text-2xl font-bold">Pharmacy Inventory & Prescription Verification</h2>
+          <p class="text-slate-400 text-xs">Manage medicine stock, pricing, expiry dates, and review user prescription uploads.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddMedicineModal()" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Add New Medicine
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Stat Counters -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">Total Products</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="stat-total-meds">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-amber-600 font-medium flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock (&lt;10)</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-low-stock">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-rose-600 font-medium flex items-center gap-1"><i class="fa-solid fa-file-medical"></i> Pending Rx</p>
+          <p class="text-2xl font-bold text-rose-600 mt-1" id="stat-pending-rx">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-brand-600 font-medium">Total Orders</p>
+          <p class="text-2xl font-bold text-brand-700 mt-1" id="stat-total-orders">0</p>
+        </div>
+      </div>
+
+      <!-- Admin Navigation Tabs -->
+      <div class="flex border-b border-slate-200 gap-2">
+        <button id="admin-subtab-meds" onclick="switchAdminTab('meds')" class="px-4 py-2.5 text-sm font-semibold border-b-2 border-brand-600 text-brand-700">
+          <i class="fa-solid fa-pills mr-1.5"></i> Medicine Catalog (CRUD)
+        </button>
+        <button id="admin-subtab-rx" onclick="switchAdminTab('rx')" class="px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900 relative">
+          <i class="fa-solid fa-file-prescription mr-1.5"></i> Prescription Verification Queue
+          <span id="admin-rx-badge" class="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white">0</span>
+        </button>
+        <button id="admin-subtab-orders" onclick="switchAdminTab('orders')" class="px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-dolly mr-1.5"></i> Manage Orders Status
+        </button>
+      </div>
+
+      <!-- SECTION: ADMIN MEDICINE MANAGEMENT -->
+      <div id="admin-section-meds" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-base">All Medicines Database</h3>
+          <span class="text-xs text-slate-500">Edit price, stock, expiry date or delete medicines</span>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                <tr>
+                  <th class="p-3.5">Medicine</th>
+                  <th class="p-3.5">Category</th>
+                  <th class="p-3.5">Price</th>
+                  <th class="p-3.5">Stock</th>
+                  <th class="p-3.5">Expiry</th>
+                  <th class="p-3.5">Rx Required</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-medicine-table" class="divide-y divide-slate-100">
+                <!-- Rows rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: ADMIN PRESCRIPTION VERIFICATION -->
+      <div id="admin-section-rx" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-base">Prescription Verification Queue</h3>
+            <p class="text-xs text-slate-500">Verify customer uploaded prescriptions before orders can be processed and dispatched.</p>
+          </div>
+        </div>
+        <div id="admin-rx-queue-container" class="space-y-4">
+          <!-- Pending prescription cards rendered by JS -->
+        </div>
+      </div>
+
+      <!-- SECTION: ADMIN ORDERS STATUS MANAGEMENT -->
+      <div id="admin-section-orders" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-base">All Customer Orders</h3>
+          <span class="text-xs text-slate-500">Update dispatch & delivery statuses</span>
+        </div>
+        <div id="admin-orders-table-container" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <!-- Table rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: MEDICINE DETAILS (CUSTOMER VIEW) -->
+  <!-- ============================================== -->
+  <div id="med-details-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      <div class="relative bg-slate-100 p-6 flex items-center justify-center border-b border-slate-200">
+        <button onclick="closeDetailsModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white text-slate-500 hover:text-slate-900 flex items-center justify-center shadow-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <img id="modal-img" src="" alt="" class="h-44 object-contain">
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="modal-category" class="text-[10px] font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">Category</span>
+            <span id="modal-rx-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Rx Required</span>
+          </div>
+          <h3 id="modal-name" class="text-xl font-bold text-slate-900">Medicine Name</h3>
+          <p id="modal-salt" class="text-xs text-slate-500">Salt / Active Ingredients</p>
+        </div>
+
+        <p id="modal-desc" class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">Description here...</p>
+
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50">
+            <span class="text-slate-400 block text-[10px] font-medium">EXPIRY DATE</span>
+            <span id="modal-expiry" class="font-semibold text-slate-800">12/2027</span>
+          </div>
+          <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50">
+            <span class="text-slate-400 block text-[10px] font-medium">STOCK AVAILABILITY</span>
+            <span id="modal-stock" class="font-semibold text-emerald-600">Available</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-[10px] text-slate-400 block">Price</span>
+            <div class="flex items-baseline gap-1.5">
+              <span id="modal-price" class="text-2xl font-black text-slate-900">₹0</span>
+              <span id="modal-mrp" class="text-xs text-slate-400 line-through">₹0</span>
+            </div>
+          </div>
+          <button id="modal-add-btn" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-cart-plus"></i> Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- DRAWER: CART & CHECKOUT -->
+  <!-- ============================================== -->
+  <div id="cart-drawer-overlay" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden transition-opacity"></div>
+  <div id="cart-drawer" class="fixed top-0 right-0 z-50 w-full max-w-md h-full bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+    
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-bag-shopping text-brand-600 text-lg"></i>
+        <h3 class="font-bold text-slate-900">My Medicine Bag (<span id="cart-items-count">0</span>)</h3>
+      </div>
+      <button onclick="toggleCartDrawer(false)" class="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Rx Warning Alert in Cart -->
+    <div id="cart-rx-alert" class="mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5 hidden">
+      <i class="fa-solid fa-file-prescription text-amber-600 text-base mt-0.5"></i>
+      <div>
+        <p class="font-bold">Prescription Required</p>
+        <p class="text-[11px] text-amber-700 mt-0.5">Your cart contains schedule drugs that need a doctor's prescription upload at checkout.</p>
+      </div>
+    </div>
+
+    <!-- Cart Items Scrollable List -->
+    <div id="cart-items-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <!-- Items rendered by JS -->
+    </div>
+
+    <!-- Cart Footer & Checkout Area -->
+    <div class="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
+      <div class="space-y-1.5 text-xs text-slate-600">
+        <div class="flex justify-between">
+          <span>Items Total</span>
+          <span id="cart-subtotal" class="font-semibold text-slate-800">₹0</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Delivery Charge</span>
+          <span id="cart-delivery" class="text-emerald-600 font-semibold">FREE</span>
+        </div>
+        <div class="flex justify-between text-sm font-bold text-slate-900 pt-1 border-t border-slate-200">
+          <span>To Pay</span>
+          <span id="cart-total" class="text-brand-700">₹0</span>
+        </div>
+      </div>
+
+      <button id="checkout-step-btn" onclick="openCheckoutModal()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+        <span>Proceed to Checkout</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CHECKOUT & PRESCRIPTION UPLOAD -->
+  <!-- ============================================== -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-6 space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-brand-600"></i> Checkout & Delivery
+        </h3>
+        <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Prescription Upload Box (Conditional) -->
+      <div id="checkout-rx-container" class="space-y-2 p-4 bg-amber-50/70 border border-amber-200 rounded-xl">
+        <label class="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-up text-amber-700"></i> Upload Doctor's Prescription (Mandatory for Rx Items)
+        </label>
+        <p class="text-[11px] text-amber-700 leading-normal">Our certified pharmacists will verify the prescription before dispatching your order.</p>
+        
+        <div class="mt-2">
+          <input type="file" id="rx-file-input" accept="image/*" onchange="handleRxUpload(event)" class="hidden">
+          <div onclick="document.getElementById('rx-file-input').click()" class="border-2 border-dashed border-amber-300 rounded-xl p-4 text-center cursor-pointer bg-white hover:bg-amber-50/50 transition-all">
+            <i class="fa-solid fa-camera text-amber-600 text-2xl mb-1"></i>
+            <p class="text-xs font-semibold text-slate-800">Click to upload prescription photo</p>
+            <p class="text-[10px] text-slate-400">JPG, PNG or photo from camera</p>
+          </div>
+        </div>
+        
+        <!-- Rx Preview -->
+        <div id="rx-preview-box" class="hidden mt-2 flex items-center gap-3 p-2 bg-white rounded-lg border border-amber-200">
+          <img id="rx-preview-img" src="" class="w-12 h-12 rounded object-cover border">
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-slate-800 truncate" id="rx-filename">prescription.jpg</p>
+            <p class="text-[10px] text-emerald-600 font-medium"><i class="fa-solid fa-check"></i> File ready for pharmacist review</p>
+          </div>
+          <button onclick="removeRxUpload()" class="text-slate-400 hover:text-rose-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      </div>
+
+      <!-- Delivery Address Form -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Delivery Address</h4>
+        <div class="space-y-2">
+          <input type="text" id="order-addr-name" placeholder="Full Name" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          <input type="tel" id="order-addr-phone" placeholder="10-digit Mobile Number" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          <input type="text" id="order-addr-flat" placeholder="Flat / House No. / Building" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          <input type="text" id="order-addr-street" placeholder="Street / Area / Locality" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="order-addr-city" placeholder="City" class="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+            <input type="text" id="order-addr-pin" placeholder="PIN Code" class="text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Payment Mode</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="p-3 border border-slate-200 rounded-xl flex items-center gap-2 cursor-pointer bg-slate-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+            <input type="radio" name="pay-method" value="COD" checked class="text-brand-600 focus:ring-brand-500">
+            <span class="text-xs font-semibold text-slate-800">Cash on Delivery</span>
+          </label>
+          <label class="p-3 border border-slate-200 rounded-xl flex items-center gap-2 cursor-pointer bg-slate-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+            <input type="radio" name="pay-method" value="ONLINE" class="text-brand-600 focus:ring-brand-500">
+            <span class="text-xs font-semibold text-slate-800">UPI / Cards</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Total & Confirm Button -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-slate-400 block">Total Amount</span>
+          <span id="checkout-total-amt" class="text-lg font-black text-slate-900">₹0</span>
+        </div>
+        <button onclick="submitOrder()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
+          <i class="fa-solid fa-lock"></i> Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: AUTHENTICATION (MOBILE + OTP + REGISTER) -->
+  <!-- ============================================== -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i class="fa-solid fa-user-circle text-brand-600"></i> <span id="auth-modal-title">Sign In to MediCare</span>
+        </h3>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Step 1: Mobile Number Input -->
+      <div id="auth-step-phone" class="space-y-3">
+        <p class="text-xs text-slate-500">Enter your 10-digit mobile number to receive a secure One Time Password (OTP).</p>
+        <div class="relative">
+          <span class="absolute left-3 top-2.5 text-xs font-bold text-slate-500">+91</span>
+          <input type="tel" id="auth-phone-input" maxlength="10" placeholder="9876543210" class="w-full pl-12 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500 font-medium">
+        </div>
+        <button onclick="sendOTP()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
+          Send OTP
+        </button>
+      </div>
+
+      <!-- Step 2: OTP Verification -->
+      <div id="auth-step-otp" class="space-y-3 hidden">
+        <p class="text-xs text-slate-500">Enter the 4-digit code sent to <span id="auth-display-phone" class="font-bold text-slate-800"></span></p>
+        
+        <!-- Demo Helper Banner -->
+        <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-800">
+          <span>Demo OTP: </span><span id="demo-otp-val" class="font-black tracking-widest text-emerald-900 text-sm">4321</span>
+        </div>
+
+        <input type="text" id="auth-otp-input" maxlength="4" placeholder="••••" class="w-full py-2 text-center text-xl tracking-[1em] font-mono bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        
+        <button onclick="verifyOTP()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
+          Verify & Continue
+        </button>
+
+        <div class="flex justify-between text-xs text-slate-400 pt-1">
+          <button onclick="resendOTP()" class="hover:text-brand-600 font-medium">Resend OTP</button>
+          <button onclick="changeAuthPhone()" class="hover:text-slate-600">Change Number</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Profile Registration (New User) -->
+      <div id="auth-step-register" class="space-y-3 hidden">
+        <p class="text-xs text-slate-500">Complete your profile to manage medicine orders & prescriptions.</p>
+        <input type="text" id="reg-name" placeholder="Full Name" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        <input type="email" id="reg-email" placeholder="Email Address" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        <input type="text" id="reg-address" placeholder="Delivery Address" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        <button onclick="completeRegistration()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
+          Save Profile
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ADMIN ADD / EDIT MEDICINE -->
+  <!-- ============================================== -->
+  <div id="admin-med-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-base" id="admin-med-modal-title">Add Medicine</h3>
+        <button onclick="closeAdminMedModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <input type="hidden" id="admin-med-id">
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Medicine Name</label>
+          <input type="text" id="admin-input-name" placeholder="e.g. Paracetamol 650mg" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Salt / Generic Formula</label>
+          <input type="text" id="admin-input-salt" placeholder="e.g. Paracetamol IP 650mg" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">Category</label>
+            <select id="admin-input-category" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+              <option value="Pain Relief">Pain Relief</option>
+              <option value="Fever & Cold">Fever & Cold</option>
+              <option value="Antibiotics">Antibiotics</option>
+              <option value="Chronic Care">Chronic Care</option>
+              <option value="Vitamins">Vitamins & Supplements</option>
+              <option value="First Aid">First Aid & Antiseptics</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">Stock Count</label>
+            <input type="number" id="admin-input-stock" placeholder="e.g. 50" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">Selling Price (₹)</label>
+            <input type="number" id="admin-input-price" placeholder="e.g. 45" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">MRP (₹)</label>
+            <input type="number" id="admin-input-mrp" placeholder="e.g. 60" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">Expiry Date</label>
+            <input type="month" id="admin-input-expiry" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">Image URL</label>
+            <input type="url" id="admin-input-image" placeholder="https://..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Description & Usage</label>
+          <textarea id="admin-input-desc" rows="2" placeholder="Indications, dosage details..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-500"></textarea>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+          <label class="flex items-center gap-2 cursor-pointer font-semibold text-amber-900">
+            <input type="checkbox" id="admin-input-rx" class="w-4 h-4 text-brand-600 rounded border-amber-300 focus:ring-brand-500">
+            <span>Prescription Required (Schedule Drug / Rx)</span>
+          </label>
+          <p class="text-[10px] text-amber-700 mt-1">If enabled, customers cannot buy this medicine without uploading a doctor's prescription for admin verification.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeAdminMedModal()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveAdminMedicine()" class="px-5 py-2 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md">Save Medicine</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ADMIN VIEW PRESCRIPTION PREVIEW -->
+  <!-- ============================================== -->
+  <div id="rx-lightbox-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h4 class="font-bold text-slate-900 text-sm">Prescription Verification</h4>
+        <button onclick="closeRxLightbox()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="max-h-[60vh] overflow-auto flex items-center justify-center bg-slate-100 rounded-xl p-2">
+        <img id="lightbox-img" src="" alt="Doctor's Prescription" class="max-w-full max-h-[55vh] object-contain rounded-lg">
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeRxLightbox()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    /* ========================================================
+       DATA STORE & PERSISTENCE (LocalStorage)
+       ======================================================== */
+    const DEFAULT_MEDICINES = [
+      {
+        id: 'med-1',
+        name: 'Dolo 650 Tablet',
+        salt: 'Paracetamol IP 650mg',
+        category: 'Fever & Cold',
+        price: 32,
+        mrp: 35,
+        stock: 45,
+        expiry: '2027-08',
+        image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&q=80',
+        rxRequired: false,
+        desc: 'Relieves mild to moderate pain including headache, toothache, and helps reduce high fever body temperature.'
+      },
+      {
+        id: 'med-2',
+        name: 'Augmentin 625 Duo Tablet',
+        salt: 'Amoxicillin (500mg) + Clavulanic Acid (125mg)',
+        category: 'Antibiotics',
+        price: 195,
+        mrp: 220,
+        stock: 18,
+        expiry: '2026-11',
+        image: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80',
+        rxRequired: true,
+        desc: 'Broad-spectrum antibiotic used to treat bacterial infections of the respiratory tract, ear, sinus, and skin.'
+      },
+      {
+        id: 'med-3',
+        name: 'Telma 40mg Tablet',
+        salt: 'Telmisartan (40mg)',
+        category: 'Chronic Care',
+        price: 145,
+        mrp: 170,
+        stock: 24,
+        expiry: '2027-04',
+        image: 'https://images.unsplash.com/photo-1550572017-ed200f5e6343?w=300&q=80',
+        rxRequired: true,
+        desc: 'Cardiovascular medication used to treat hypertension (high blood pressure) and reduce the risk of heart attacks.'
+      },
+      {
+        id: 'med-4',
+        name: 'Combiflam Tablet',
+        salt: 'Ibuprofen (400mg) + Paracetamol (325mg)',
+        category: 'Pain Relief',
+        price: 42,
+        mrp: 48,
+        stock: 35,
+        expiry: '2028-01',
+        image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&q=80',
+        rxRequired: false,
+        desc: 'Dual-action anti-inflammatory pain reliever for muscular pain, joint pain, toothache, and fever.'
+      },
+      {
+        id: 'med-5',
+        name: 'Becosules Z Capsules',
+        salt: 'Vitamin B-Complex + Vitamin C + Zinc',
+        category: 'Vitamins',
+        price: 52,
+        mrp: 58,
+        stock: 60,
+        expiry: '2027-10',
+        image: 'https://images.unsplash.com/photo-1577401239170-897942555fb3?w=300&q=80',
+        rxRequired: false,
+        desc: 'Nutritional supplement to boost immunity, treat mouth ulcers, and overcome vitamin deficiencies.'
+      },
+      {
+        id: 'med-6',
+        name: 'Azithral 500 Tablet',
+        salt: 'Azithromycin (500mg)',
+        category: 'Antibiotics',
+        price: 118,
+        mrp: 135,
+        stock: 8,
+        expiry: '2026-12',
+        image: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=300&q=80',
+        rxRequired: true,
+        desc: 'Macrolide antibiotic commonly prescribed for chest infections like pneumonia, throat infections, and sinusitis.'
+      },
+      {
+        id: 'med-7',
+        name: 'Betadine 10% Solution',
+        salt: 'Povidone Iodine (10% w/v)',
+        category: 'First Aid',
+        price: 110,
+        mrp: 125,
+        stock: 30,
+        expiry: '2028-06',
+        image: 'https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=300&q=80',
+        rxRequired: false,
+        desc: 'Topical antiseptic solution for preventing infection in minor cuts, scrapes, abrasions, and minor burns.'
+      },
+      {
+        id: 'med-8',
+        name: 'Glycomet-GP 1 Forte',
+        salt: 'Glimepiride (1mg) + Metformin (1000mg)',
+        category: 'Chronic Care',
+        price: 132,
+        mrp: 155,
+        stock: 5,
+        expiry: '2026-09',
+        image: 'https://images.unsplash.com/photo-1550572017-ed200f5e6343?w=300&q=80',
+        rxRequired: true,
+        desc: 'Anti-diabetic combination medicine used to control blood sugar levels in adults with type 2 diabetes mellitus.'
+      }
+    ];
+
+    let state = {
+      appMode: 'customer', // 'customer' or 'admin'
+      currentTab: 'home',  // 'home' or 'orders'
+      adminTab: 'meds',    // 'meds', 'rx', 'orders'
+      currentUser: null,   // { phone, name, email, address, city, pincode }
+      medicines: [],
+      cart: [],            // [ { medicineId, qty } ]
+      orders: [],          // [ { id, date, items, total, address, status, rxImage, rxStatus, paymentMethod } ]
+      searchQuery: '',
+      selectedCategory: 'All',
+      rxFilterOnly: false,
+      uploadedRxBase64: null,
+      tempAuthPhone: '',
+      generatedOTP: '4829'
+    };
+
+    // Load state from localStorage or seed defaults
+    function initState() {
+      const savedMeds = localStorage.getItem('medicare_medicines');
+      state.medicines = savedMeds ? JSON.parse(savedMeds) : DEFAULT_MEDICINES;
+
+      const savedUser = localStorage.getItem('medicare_user');
+      state.currentUser = savedUser ? JSON.parse(savedUser) : null;
+
+      const savedCart = localStorage.getItem('medicare_cart');
+      state.cart = savedCart ? JSON.parse(savedCart) : [];
+
+      const savedOrders = localStorage.getItem('medicare_orders');
+      if (savedOrders) {
+        state.orders = JSON.parse(savedOrders);
+      } else {
+        // Seed an initial demo order so tracking view has content
+        state.orders = [
+          {
+            id: 'ORD-9842',
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            items: [
+              { ...DEFAULT_MEDICINES[1], qty: 1 } // Augmentin (Rx Required)
+            ],
+            total: 195,
+            address: {
+              name: 'Demo Customer',
+              phone: '9823012345',
+              flat: 'Flat 402, Green Park',
+              street: 'Ramdaspeth',
+              city: 'Nagpur',
+              pin: '440010'
+            },
+            status: 'Prescription Verification',
+            rxImage: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=600&q=80',
+            rxStatus: 'PENDING',
+            paymentMethod: 'COD'
+          }
+        ];
+        localStorage.setItem('medicare_orders', JSON.stringify(state.orders));
+      }
+
+      renderAuthUI();
+      renderCategories();
+      renderMedicines();
+      renderCartUI();
+      renderOrdersUI();
+      renderAdminStats();
+    }
+
+    function saveMedicines() {
+      localStorage.setItem('medicare_medicines', JSON.stringify(state.medicines));
+      renderMedicines();
+      renderAdminStats();
+      if (state.appMode === 'admin') renderAdminMedicinesTable();
+    }
+
+    function saveCart() {
+      localStorage.setItem('medicare_cart', JSON.stringify(state.cart));
+      renderCartUI();
+    }
+
+    function saveOrders() {
+      localStorage.setItem('medicare_orders', JSON.stringify(state.orders));
+      renderOrdersUI();
+      renderAdminStats();
+      if (state.appMode === 'admin') {
+        renderAdminRxQueue();
+        renderAdminOrdersTable();
+      }
+    }
+
+    /* ========================================================
+       TOAST NOTIFICATIONS
+       ======================================================== */
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-msg');
+
+      text.textContent = msg;
+      if (isSuccess) {
+        icon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+      } else {
+        icon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+      }
+
+      toast.classList.remove('translate-y-[-150%]');
+      setTimeout(() => {
+        toast.classList.add('translate-y-[-150%]');
+      }, 3000);
+    }
+
+    /* ========================================================
+       APP MODE & TAB NAVIGATION
+       ======================================================== */
+    function toggleAppMode() {
+      if (state.appMode === 'customer') {
+        state.appMode = 'admin';
+        document.getElementById('customer-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.remove('hidden');
+        document.getElementById('mode-text').textContent = 'Customer Mode';
+        document.getElementById('mode-badge').className = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-white flex items-center gap-1.5 shadow-sm';
+        switchAdminTab('meds');
+        showToast('Switched to Admin Panel');
+      } else {
+        state.appMode = 'customer';
+        document.getElementById('customer-view').classList.remove('hidden');
+        document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('mode-text').textContent = 'Admin Panel';
+        document.getElementById('mode-badge').className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-all shadow-sm';
+        showToast('Switched to Customer App');
+      }
+    }
+
+    function navigateTab(tab) {
+      state.currentTab = tab;
+      const homeBtn = document.getElementById('tab-btn-home');
+      const ordersBtn = document.getElementById('tab-btn-orders');
+      const homeContent = document.getElementById('tab-content-home');
+      const ordersContent = document.getElementById('tab-content-orders');
+
+      if (tab === 'home') {
+        homeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-brand-600 text-white shadow-sm transition-all';
+        ordersBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-white text-slate-700 hover:bg-slate-100 transition-all border border-slate-200';
+        homeContent.classList.remove('hidden');
+        ordersContent.classList.add('hidden');
+      } else {
+        ordersBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-brand-600 text-white shadow-sm transition-all';
+        homeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-white text-slate-700 hover:bg-slate-100 transition-all border border-slate-200';
+        ordersContent.classList.remove('hidden');
+        homeContent.classList.add('hidden');
+        renderOrdersUI();
+      }
+    }
+
+    function switchAdminTab(subtab) {
+      state.adminTab = subtab;
+      const tabMeds = document.getElementById('admin-subtab-meds');
+      const tabRx = document.getElementById('admin-subtab-rx');
+      const tabOrders = document.getElementById('admin-subtab-orders');
+
+      const secMeds = document.getElementById('admin-section-meds');
+      const secRx = document.getElementById('admin-section-rx');
+      const secOrders = document.getElementById('admin-section-orders');
+
+      [tabMeds, tabRx, tabOrders].forEach(t => {
+        t.className = 'px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900';
+      });
+      [secMeds, secRx, secOrders].forEach(s => s.classList.add('hidden'));
+
+      if (subtab === 'meds') {
+        tabMeds.className = 'px-4 py-2.5 text-sm font-semibold border-b-2 border-brand-600 text-brand-700';
+        secMeds.classList.remove('hidden');
+        renderAdminMedicinesTable();
+      } else if (subtab === 'rx') {
+        tabRx.className = 'px-4 py-2.5 text-sm font-semibold border-b-2 border-brand-600 text-brand-700 relative';
+        secRx.classList.remove('hidden');
+        renderAdminRxQueue();
+      } else if (subtab === 'orders') {
+        tabOrders.className = 'px-4 py-2.5 text-sm font-semibold border-b-2 border-brand-600 text-brand-700';
+        secOrders.classList.remove('hidden');
+        renderAdminOrdersTable();
+      }
+    }
+
+    /* ========================================================
+       AUTHENTICATION LOGIC (Mobile + OTP + Register)
+       ======================================================== */
+    function renderAuthUI() {
+      const container = document.getElementById('auth-buttons-container');
+      if (state.currentUser) {
+        container.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-xs">
+              ${state.currentUser.name.charAt(0).toUpperCase()}
+            </div>
+            <span class="text-xs font-semibold text-slate-700 hidden sm:inline-block">${state.currentUser.name}</span>
+            <button onclick="logoutUser()" title="Logout" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg">
+              <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <button onclick="openAuthModal()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm">
+            <i class="fa-regular fa-user mr-1"></i> Login / Register
+          </button>
+        `;
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-modal').classList.add('flex');
+      showAuthStep('phone');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('auth-modal').classList.remove('flex');
+    }
+
+    function showAuthStep(step) {
+      document.getElementById('auth-step-phone').classList.add('hidden');
+      document.getElementById('auth-step-otp').classList.add('hidden');
+      document.getElementById('auth-step-register').classList.add('hidden');
+
+      if (step === 'phone') {
+        document.getElementById('auth-modal-title').textContent = 'Sign In to MediCare';
+        document.getElementById('auth-step-phone').classList.remove('hidden');
+      } else if (step === 'otp') {
+        document.getElementById('auth-modal-title').textContent = 'Enter Verification Code';
+        document.getElementById('auth-step-otp').classList.remove('hidden');
+      } else if (step === 'register') {
+        document.getElementById('auth-modal-title').textContent = 'Complete Profile';
+        document.getElementById('auth-step-register').classList.remove('hidden');
+      }
+    }
+
+    function sendOTP() {
+      const phone = document.getElementById('auth-phone-input').value.trim();
+      if (!phone || phone.length < 10) {
+        showToast('Please enter a valid 10-digit mobile number', false);
+        return;
+      }
+      state.tempAuthPhone = phone;
+      state.generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+      document.getElementById('demo-otp-val').textContent = state.generatedOTP;
+      document.getElementById('auth-display-phone').textContent = `+91 ${phone}`;
+      showAuthStep('otp');
+      showToast(`OTP sent to +91 ${phone}`);
+    }
+
+    function resendOTP() {
+      state.generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+      document.getElementById('demo-otp-val').textContent = state.generatedOTP;
+      showToast(`New OTP generated: ${state.generatedOTP}`);
+    }
+
+    function changeAuthPhone() {
+      showAuthStep('phone');
+    }
+
+    function verifyOTP() {
+      const enteredOtp = document.getElementById('auth-otp-input').value.trim();
+      if (enteredOtp !== state.generatedOTP && enteredOtp !== '1234') {
+        showToast('Invalid OTP! Enter the 4-digit code shown above', false);
+        return;
+      }
+
+      // Check if user profile exists for this phone
+      const existingUserStr = localStorage.getItem('medicare_user_' + state.tempAuthPhone);
+      if (existingUserStr) {
+        state.currentUser = JSON.parse(existingUserStr);
+        localStorage.setItem('medicare_user', JSON.stringify(state.currentUser));
+        closeAuthModal();
+        renderAuthUI();
+        showToast(`Welcome back, ${state.currentUser.name}!`);
+      } else {
+        // Direct to registration
+        showAuthStep('register');
+      }
+    }
+
+    function completeRegistration() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const address = document.getElementById('reg-address').value.trim();
+
+      if (!name) {
+        showToast('Please enter your full name', false);
+        return;
+      }
+
+      state.currentUser = {
+        phone: state.tempAuthPhone,
+        name: name,
+        email: email || `${state.tempAuthPhone}@example.com`,
+        address: address || 'Nagpur, Maharashtra'
+      };
+
+      localStorage.setItem('medicare_user', JSON.stringify(state.currentUser));
+      localStorage.setItem('medicare_user_' + state.tempAuthPhone, JSON.stringify(state.currentUser));
+      closeAuthModal();
+      renderAuthUI();
+      showToast(`Account registered successfully!`);
+    }
+
+    function logoutUser() {
+      state.currentUser = null;
+      localStorage.removeItem('medicare_user');
+      renderAuthUI();
+      showToast('Logged out successfully');
+    }
+
+    /* ========================================================
+       CATEGORY FILTER & LIVE MEDICINE SEARCH
+       ======================================================== */
+    const CATEGORIES = ['All', 'Pain Relief', 'Fever & Cold', 'Antibiotics', 'Chronic Care', 'Vitamins', 'First Aid'];
+
+    function renderCategories() {
+      const container = document.getElementById('category-pills');
+      container.innerHTML = CATEGORIES.map(cat => {
+        const isActive = state.selectedCategory === cat;
+        return `
+          <button onclick="selectCategory('${cat}')" class="px-3.5 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all ${
+            isActive 
+              ? 'bg-brand-600 text-white shadow-sm' 
+              : 'bg-white text-slate-600 border border-slate-200 hover:border-brand-300'
+          }">
+            ${cat}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategory(cat) {
+      state.selectedCategory = cat;
+      renderCategories();
+      renderMedicines();
+    }
+
+    function handleSearch(val) {
+      state.searchQuery = val.trim().toLowerCase();
+      renderMedicines();
+    }
+
+    function toggleRxFilter(checked) {
+      state.rxFilterOnly = checked;
+      renderMedicines();
+    }
+
+    function getFilteredMedicines() {
+      return state.medicines.filter(med => {
+        const matchesCategory = state.selectedCategory === 'All' || med.category === state.selectedCategory;
+        const matchesRx = !state.rxFilterOnly || med.rxRequired;
+        const matchesSearch = !state.searchQuery || 
+          med.name.toLowerCase().includes(state.searchQuery) ||
+          med.salt.toLowerCase().includes(state.searchQuery) ||
+          med.category.toLowerCase().includes(state.searchQuery);
+        return matchesCategory && matchesRx && matchesSearch;
+      });
+    }
+
+    function renderMedicines() {
+      const grid = document.getElementById('medicine-grid');
+      const filtered = getFilteredMedicines();
+      document.getElementById('item-count-text').textContent = `Showing ${filtered.length} items`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-slate-400">
+            <i class="fa-solid fa-box-open text-4xl mb-2 text-slate-300"></i>
+            <p class="text-sm font-semibold text-slate-600">No medicines found</p>
+            <p class="text-xs text-slate-400">Try adjusting your search query or filter</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(med => {
+        const inStock = med.stock > 0;
+        const discount = Math.round(((med.mrp - med.price) / med.mrp) * 100);
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col group">
+            <div class="relative bg-slate-50 p-4 flex items-center justify-center cursor-pointer" onclick="openDetailsModal('${med.id}')">
+              <!-- Prescription Badge -->
+              ${med.rxRequired ? `
+                <span class="absolute top-3 left-3 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                  <i class="fa-solid fa-prescription"></i> Rx Required
+                </span>
+              ` : ''}
+
+              <!-- Stock Tag -->
+              <span class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded ${
+                med.stock <= 0 ? 'bg-rose-100 text-rose-700' :
+                med.stock < 10 ? 'bg-orange-100 text-orange-800' :
+                'bg-emerald-50 text-emerald-700'
+              }">
+                ${med.stock <= 0 ? 'Out of Stock' : med.stock < 10 ? `Low: ${med.stock} left` : 'In Stock'}
+              </span>
+
+              <img src="${med.image}" alt="${med.name}" class="h-36 object-contain group-hover:scale-105 transition-transform duration-200">
+            </div>
+
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <span class="text-[10px] font-semibold text-brand-700 uppercase tracking-wider">${med.category}</span>
+                <h4 class="font-bold text-slate-900 text-sm leading-snug cursor-pointer hover:text-brand-600" onclick="openDetailsModal('${med.id}')">
+                  ${med.name}
+                </h4>
+                <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">${med.salt}</p>
+              </div>
+
+              <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <div class="flex items-baseline gap-1.5">
+                    <span class="text-base font-black text-slate-900">₹${med.price}</span>
+                    <span class="text-xs text-slate-400 line-through">₹${med.mrp}</span>
+                  </div>
+                  <span class="text-[10px] text-emerald-600 font-bold">${discount}% OFF</span>
+                </div>
+
+                <button onclick="addToCart('${med.id}')" ${!inStock ? 'disabled' : ''} class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                  inStock 
+                    ? 'bg-brand-50 text-brand-700 hover:bg-brand-600 hover:text-white border border-brand-200' 
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                }">
+                  <i class="fa-solid fa-plus text-[10px]"></i> Add
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ========================================================
+       MEDICINE DETAILS MODAL
+       ======================================================== */
+    function openDetailsModal(id) {
+      const med = state.medicines.find(m => m.id === id);
+      if (!med) return;
+
+      document.getElementById('modal-img').src = med.image;
+      document.getElementById('modal-name').textContent = med.name;
+      document.getElementById('modal-salt').textContent = med.salt;
+      document.getElementById('modal-category').textContent = med.category;
+      document.getElementById('modal-desc').textContent = med.desc || 'No description provided.';
+      document.getElementById('modal-expiry').textContent = med.expiry || 'Standard';
+      document.getElementById('modal-price').textContent = `₹${med.price}`;
+      document.getElementById('modal-mrp').textContent = `₹${med.mrp}`;
+
+      const stockEl = document.getElementById('modal-stock');
+      if (med.stock <= 0) {
+        stockEl.textContent = 'Out of Stock';
+        stockEl.className = 'font-semibold text-rose-600';
+      } else if (med.stock < 10) {
+        stockEl.textContent = `Low Stock (${med.stock} units left)`;
+        stockEl.className = 'font-semibold text-amber-600';
+      } else {
+        stockEl.textContent = `Available in Stock (${med.stock} units)`;
+        stockEl.className = 'font-semibold text-emerald-600';
+      }
+
+      const rxBadge = document.getElementById('modal-rx-badge');
+      if (med.rxRequired) {
+        rxBadge.classList.remove('hidden');
+      } else {
+        rxBadge.classList.add('hidden');
+      }
+
+      const addBtn = document.getElementById('modal-add-btn');
+      addBtn.onclick = () => {
+        addToCart(med.id);
+        closeDetailsModal();
+      };
+
+      document.getElementById('med-details-modal').classList.remove('hidden');
+      document.getElementById('med-details-modal').classList.add('flex');
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('med-details-modal').classList.add('hidden');
+      document.getElementById('med-details-modal').classList.remove('flex');
+    }
+
+    /* ========================================================
+       CART & CHECKOUT LOGIC
+       ======================================================== */
+    function toggleCartDrawer(open) {
+      const drawer = document.getElementById('cart-drawer');
+      const overlay = document.getElementById('cart-drawer-overlay');
+
+      if (open) {
+        renderCartUI();
+        overlay.classList.remove('hidden');
+        drawer.classList.remove('translate-x-full');
+      } else {
+        overlay.classList.add('hidden');
+        drawer.classList.add('translate-x-full');
+      }
+    }
+
+    function addToCart(medId) {
+      const med = state.medicines.find(m => m.id === medId);
+      if (!med || med.stock <= 0) {
+        showToast('Medicine is currently out of stock', false);
+        return;
+      }
+
+      const existing = state.cart.find(c => c.medicineId === medId);
+      if (existing) {
+        if (existing.qty >= med.stock) {
+          showToast(`Only ${med.stock} units available in stock`, false);
+          return;
+        }
+        existing.qty += 1;
+      } else {
+        state.cart.push({ medicineId: medId, qty: 1 });
+      }
+
+      saveCart();
+      showToast(`Added ${med.name} to cart`);
+    }
+
+    function updateCartQty(medId, delta) {
+      const item = state.cart.find(c => c.medicineId === medId);
+      const med = state.medicines.find(m => m.id === medId);
+      if (!item) return;
+
+      item.qty += delta;
+      if (item.qty <= 0) {
+        state.cart = state.cart.filter(c => c.medicineId !== medId);
+      } else if (med && item.qty > med.stock) {
+        item.qty = med.stock;
+        showToast(`Maximum available stock is ${med.stock}`, false);
+      }
+      saveCart();
+    }
+
+    function renderCartUI() {
+      const counter = document.getElementById('cart-counter');
+      const itemsCountEl = document.getElementById('cart-items-count');
+      const itemsList = document.getElementById('cart-items-list');
+      const rxAlert = document.getElementById('cart-rx-alert');
+      const subtotalEl = document.getElementById('cart-subtotal');
+      const totalEl = document.getElementById('cart-total');
+
+      const totalItems = state.cart.reduce((sum, item) => sum + item.qty, 0);
+      counter.textContent = totalItems;
+      itemsCountEl.textContent = totalItems;
+
+      let subtotal = 0;
+      let hasRxItem = false;
+
+      if (state.cart.length === 0) {
+        itemsList.innerHTML = `
+          <div class="py-16 text-center text-slate-400">
+            <i class="fa-solid fa-cart-arrow-down text-5xl mb-3 text-slate-300"></i>
+            <p class="text-sm font-semibold text-slate-700">Your medicine bag is empty</p>
+            <p class="text-xs text-slate-400 mt-1">Search medicines and add to cart</p>
+          </div>
+        `;
+        rxAlert.classList.add('hidden');
+        subtotalEl.textContent = '₹0';
+        totalEl.textContent = '₹0';
+        document.getElementById('checkout-step-btn').disabled = true;
+        document.getElementById('checkout-step-btn').classList.add('opacity-50', 'cursor-not-allowed');
+        return;
+      }
+
+      document.getElementById('checkout-step-btn').disabled = false;
+      document.getElementById('checkout-step-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+      itemsList.innerHTML = state.cart.map(c => {
+        const med = state.medicines.find(m => m.id === c.medicineId);
+        if (!med) return '';
+
+        const itemTotal = med.price * c.qty;
+        subtotal += itemTotal;
+        if (med.rxRequired) hasRxItem = true;
+
+        return `
+          <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200">
+            <img src="${med.image}" class="w-12 h-12 object-contain rounded-lg bg-slate-50 border border-slate-100">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h4 class="text-xs font-bold text-slate-800 truncate">${med.name}</h4>
+                ${med.rxRequired ? '<span class="text-[9px] px-1 py-0.2 bg-amber-100 text-amber-800 font-black rounded">Rx</span>' : ''}
+              </div>
+              <p class="text-[11px] text-slate-500 font-semibold mt-0.5">₹${med.price} × ${c.qty} = ₹${itemTotal}</p>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+              <button onclick="updateCartQty('${med.id}', -1)" class="w-6 h-6 rounded bg-white text-slate-600 hover:text-rose-600 flex items-center justify-center font-bold text-xs shadow-sm">-</button>
+              <span class="text-xs font-bold px-1.5">${c.qty}</span>
+              <button onclick="updateCartQty('${med.id}', 1)" class="w-6 h-6 rounded bg-white text-slate-600 hover:text-brand-600 flex items-center justify-center font-bold text-xs shadow-sm">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (hasRxItem) {
+        rxAlert.classList.remove('hidden');
+      } else {
+        rxAlert.classList.add('hidden');
+      }
+
+      subtotalEl.textContent = `₹${subtotal}`;
+      totalEl.textContent = `₹${subtotal}`;
+    }
+
+    /* ========================================================
+       CHECKOUT & PRESCRIPTION UPLOAD
+       ======================================================== */
+    function openCheckoutModal() {
+      if (state.cart.length === 0) return;
+
+      if (!state.currentUser) {
+        openAuthModal();
+        showToast('Please login or register to place your order', false);
+        return;
+      }
+
+      toggleCartDrawer(false);
+
+      // Pre-fill user details
+      document.getElementById('order-addr-name').value = state.currentUser.name || '';
+      document.getElementById('order-addr-phone').value = state.currentUser.phone || '';
+      document.getElementById('order-addr-street').value = state.currentUser.address || '';
+
+      const subtotal = state.cart.reduce((sum, item) => {
+        const med = state.medicines.find(m => m.id === item.medicineId);
+        return sum + (med ? med.price * item.qty : 0);
+      }, 0);
+      document.getElementById('checkout-total-amt').textContent = `₹${subtotal}`;
+
+      // Check if prescription required
+      const hasRx = state.cart.some(c => {
+        const med = state.medicines.find(m => m.id === c.medicineId);
+        return med && med.rxRequired;
+      });
+
+      const rxContainer = document.getElementById('checkout-rx-container');
+      if (hasRx) {
+        rxContainer.classList.remove('hidden');
+      } else {
+        rxContainer.classList.add('hidden');
+      }
+
+      document.getElementById('checkout-modal').classList.remove('hidden');
+      document.getElementById('checkout-modal').classList.add('flex');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+      document.getElementById('checkout-modal').classList.remove('flex');
+    }
+
+    function handleRxUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        state.uploadedRxBase64 = evt.target.result;
+        document.getElementById('rx-preview-img').src = state.uploadedRxBase64;
+        document.getElementById('rx-filename').textContent = file.name;
+        document.getElementById('rx-preview-box').classList.remove('hidden');
+        showToast('Prescription attached successfully');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeRxUpload() {
+      state.uploadedRxBase64 = null;
+      document.getElementById('rx-file-input').value = '';
+      document.getElementById('rx-preview-box').classList.add('hidden');
+      showToast('Prescription removed');
+    }
+
+    function submitOrder() {
+      const name = document.getElementById('order-addr-name').value.trim();
+      const phone = document.getElementById('order-addr-phone').value.trim();
+      const flat = document.getElementById('order-addr-flat').value.trim();
+      const street = document.getElementById('order-addr-street').value.trim();
+      const city = document.getElementById('order-addr-city').value.trim() || 'Nagpur';
+      const pin = document.getElementById('order-addr-pin').value.trim() || '440010';
+
+      if (!name || !phone || !street) {
+        showToast('Please provide your name, phone number, and street address', false);
+        return;
+      }
+
+      // Check Rx requirement
+      const hasRx = state.cart.some(c => {
+        const med = state.medicines.find(m => m.id === c.medicineId);
+        return med && med.rxRequired;
+      });
+
+      if (hasRx && !state.uploadedRxBase64) {
+        showToast('Doctor prescription is mandatory for items in your cart!', false);
+        return;
+      }
+
+      // Decrement stock
+      state.cart.forEach(item => {
+        const med = state.medicines.find(m => m.id === item.medicineId);
+        if (med) {
+          med.stock = Math.max(0, med.stock - item.qty);
+        }
+      });
+      saveMedicines();
+
+      const orderItems = state.cart.map(c => {
+        const med = state.medicines.find(m => m.id === c.medicineId);
+        return { ...med, qty: c.qty };
+      });
+
+      const totalAmt = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
+      const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'COD';
+
+      const newOrder = {
+        id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        items: orderItems,
+        total: totalAmt,
+        address: { name, phone, flat, street, city, pin },
+        status: hasRx ? 'Prescription Verification' : 'Packed & Dispatched',
+        rxImage: state.uploadedRxBase64 || null,
+        rxStatus: hasRx ? 'PENDING' : 'NOT_REQUIRED',
+        paymentMethod: payMethod
+      };
+
+      state.orders.unshift(newOrder);
+      state.cart = [];
+      state.uploadedRxBase64 = null;
+      saveCart();
+      saveOrders();
+
+      closeCheckoutModal();
+      navigateTab('orders');
+      showToast(`Order ${newOrder.id} placed successfully!`);
+    }
+
+    /* ========================================================
+       ORDER TRACKING & HISTORY VIEW (Customer)
+       ======================================================== */
+    function getStatusStep(status) {
+      switch (status) {
+        case 'Order Placed': return 1;
+        case 'Prescription Verification': return 2;
+        case 'Packed & Dispatched': return 3;
+        case 'Out for Delivery': return 4;
+        case 'Delivered': return 5;
+        default: return 1;
+      }
+    }
+
+    function renderOrdersUI() {
+      const container = document.getElementById('orders-list-container');
+      if (state.orders.length === 0) {
+        container.innerHTML = `
+          <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-clipboard-list text-5xl mb-3 text-slate-300"></i>
+            <p class="text-sm font-semibold text-slate-700">No orders placed yet</p>
+            <p class="text-xs text-slate-400 mt-1">Browse our medicines and place your first order!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = state.orders.map(order => {
+        const step = getStatusStep(order.status);
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <!-- Order Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-slate-900 text-sm">${order.id}</span>
+                  <span class="text-xs text-slate-400">• ${order.date}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Delivering to: <span class="font-semibold text-slate-700">${order.address.name}</span>, ${order.address.street}, ${order.address.city}</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full ${
+                  order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
+                  order.status === 'Prescription Verification' ? 'bg-amber-100 text-amber-800' :
+                  'bg-brand-50 text-brand-700 border border-brand-200'
+                }">
+                  <i class="fa-solid fa-clock-rotate-left text-[10px] mr-1"></i> ${order.status}
+                </span>
+                <span class="text-base font-black text-slate-900">₹${order.total}</span>
+              </div>
+            </div>
+
+            <!-- Visual Progress Stepper -->
+            <div class="py-2">
+              <div class="flex items-center justify-between relative max-w-2xl mx-auto">
+                <!-- Track Line -->
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-slate-200 -z-0"></div>
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-brand-600 -z-0 transition-all duration-500" style="width: ${((step - 1) / 4) * 100}%"></div>
+
+                <!-- Step 1: Placed -->
+                <div class="flex flex-col items-center relative z-10">
+                  <div class="w-8 h-8 rounded-full ${step >= 1 ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'} flex items-center justify-center text-xs font-bold shadow">
+                    <i class="fa-solid fa-receipt"></i>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-700 mt-1">Placed</span>
+                </div>
+
+                <!-- Step 2: Rx Verification -->
+                <div class="flex flex-col items-center relative z-10">
+                  <div class="w-8 h-8 rounded-full ${step >= 2 ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'} flex items-center justify-center text-xs font-bold shadow">
+                    <i class="fa-solid fa-stethoscope"></i>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-700 mt-1">Rx Verified</span>
+                </div>
+
+                <!-- Step 3: Packed -->
+                <div class="flex flex-col items-center relative z-10">
+                  <div class="w-8 h-8 rounded-full ${step >= 3 ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'} flex items-center justify-center text-xs font-bold shadow">
+                    <i class="fa-solid fa-box"></i>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-700 mt-1">Packed</span>
+                </div>
+
+                <!-- Step 4: Out for Delivery -->
+                <div class="flex flex-col items-center relative z-10">
+                  <div class="w-8 h-8 rounded-full ${step >= 4 ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'} flex items-center justify-center text-xs font-bold shadow">
+                    <i class="fa-solid fa-motorcycle"></i>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-700 mt-1">Out Delivery</span>
+                </div>
+
+                <!-- Step 5: Delivered -->
+                <div class="flex flex-col items-center relative z-10">
+                  <div class="w-8 h-8 rounded-full ${step >= 5 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400'} flex items-center justify-center text-xs font-bold shadow">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                  <span class="text-[10px] font-semibold text-slate-700 mt-1">Delivered</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ordered Medicines List -->
+            <div class="bg-slate-50 rounded-xl p-3 space-y-2 text-xs">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Items in this shipment</span>
+              <div class="divide-y divide-slate-200/60">
+                ${order.items.map(item => `
+                  <div class="py-1.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-800">${item.name}</span>
+                      <span class="text-slate-400">× ${item.qty}</span>
+                      ${item.rxRequired ? '<span class="text-[9px] px-1 bg-amber-100 text-amber-800 font-bold rounded">Rx</span>' : ''}
+                    </div>
+                    <span class="font-semibold text-slate-700">₹${item.price * item.qty}</span>
+                  </div>
+                `).join('')}
+              </div>
+
+              ${order.rxImage ? `
+                <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-file-image text-brand-600"></i>
+                    <span class="font-semibold text-slate-700">Prescription Status:</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                      order.rxStatus === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                      order.rxStatus === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
+                      'bg-amber-100 text-amber-800'
+                    }">
+                      ${order.rxStatus}
+                    </span>
+                  </div>
+                  <button onclick="previewRxImage('${order.rxImage}')" class="text-brand-600 font-bold hover:underline text-xs">View Uploaded Prescription</button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ========================================================
+       ADMIN DASHBOARD LOGIC
+       ======================================================== */
+    function renderAdminStats() {
+      document.getElementById('stat-total-meds').textContent = state.medicines.length;
+      document.getElementById('stat-low-stock').textContent = state.medicines.filter(m => m.stock < 10).length;
+      
+      const pendingRx = state.orders.filter(o => o.rxStatus === 'PENDING').length;
+      document.getElementById('stat-pending-rx').textContent = pendingRx;
+      document.getElementById('admin-rx-badge').textContent = pendingRx;
+      
+      document.getElementById('stat-total-orders').textContent = state.orders.length;
+    }
+
+    function renderAdminMedicinesTable() {
+      const table = document.getElementById('admin-medicine-table');
+      table.innerHTML = state.medicines.map(med => {
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3.5 flex items-center gap-3">
+              <img src="${med.image}" class="w-9 h-9 object-contain rounded border border-slate-200 bg-white">
+              <div>
+                <p class="font-bold text-slate-900">${med.name}</p>
+                <p class="text-[10px] text-slate-400 line-clamp-1">${med.salt}</p>
+              </div>
+            </td>
+            <td class="p-3.5 font-medium text-slate-700">${med.category}</td>
+            <td class="p-3.5 font-bold text-slate-900">₹${med.price} <span class="text-[10px] text-slate-400 line-through">₹${med.mrp}</span></td>
+            <td class="p-3.5">
+              <span class="font-bold px-2 py-0.5 rounded text-[11px] ${
+                med.stock <= 0 ? 'bg-rose-100 text-rose-800' :
+                med.stock < 10 ? 'bg-amber-100 text-amber-800' :
+                'bg-emerald-100 text-emerald-800'
+              }">${med.stock} units</span>
+            </td>
+            <td class="p-3.5 text-slate-600 font-mono">${med.expiry || 'N/A'}</td>
+            <td class="p-3.5">
+              ${med.rxRequired 
+                ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]"><i class="fa-solid fa-check"></i> Yes (Rx)</span>' 
+                : '<span class="text-slate-400 text-[10px]">No (OTC)</span>'
+              }
+            </td>
+            <td class="p-3.5 text-right space-x-1">
+              <button onclick="openEditMedicineModal('${med.id}')" title="Edit" class="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteMedicine('${med.id}')" title="Delete" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openAddMedicineModal() {
+      document.getElementById('admin-med-modal-title').textContent = 'Add New Medicine';
+      document.getElementById('admin-med-id').value = '';
+      document.getElementById('admin-input-name').value = '';
+      document.getElementById('admin-input-salt').value = '';
+      document.getElementById('admin-input-category').value = 'Pain Relief';
+      document.getElementById('admin-input-stock').value = '50';
+      document.getElementById('admin-input-price').value = '';
+      document.getElementById('admin-input-mrp').value = '';
+      document.getElementById('admin-input-expiry').value = '2027-12';
+      document.getElementById('admin-input-image').value = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&q=80';
+      document.getElementById('admin-input-desc').value = '';
+      document.getElementById('admin-input-rx').checked = false;
+
+      document.getElementById('admin-med-modal').classList.remove('hidden');
+      document.getElementById('admin-med-modal').classList.add('flex');
+    }
+
+    function openEditMedicineModal(id) {
+      const med = state.medicines.find(m => m.id === id);
+      if (!med) return;
+
+      document.getElementById('admin-med-modal-title').textContent = 'Edit Medicine';
+      document.getElementById('admin-med-id').value = med.id;
+      document.getElementById('admin-input-name').value = med.name;
+      document.getElementById('admin-input-salt').value = med.salt;
+      document.getElementById('admin-input-category').value = med.category;
+      document.getElementById('admin-input-stock').value = med.stock;
+      document.getElementById('admin-input-price').value = med.price;
+      document.getElementById('admin-input-mrp').value = med.mrp;
+      document.getElementById('admin-input-expiry').value = med.expiry;
+      document.getElementById('admin-input-image').value = med.image;
+      document.getElementById('admin-input-desc').value = med.desc || '';
+      document.getElementById('admin-input-rx').checked = !!med.rxRequired;
+
+      document.getElementById('admin-med-modal').classList.remove('hidden');
+      document.getElementById('admin-med-modal').classList.add('flex');
+    }
+
+    function closeAdminMedModal() {
+      document.getElementById('admin-med-modal').classList.add('hidden');
+      document.getElementById('admin-med-modal').classList.remove('flex');
+    }
+
+    function saveAdminMedicine() {
+      const id = document.getElementById('admin-med-id').value;
+      const name = document.getElementById('admin-input-name').value.trim();
+      const salt = document.getElementById('admin-input-salt').value.trim();
+      const category = document.getElementById('admin-input-category').value;
+      const stock = parseInt(document.getElementById('admin-input-stock').value) || 0;
+      const price = parseFloat(document.getElementById('admin-input-price').value) || 0;
+      const mrp = parseFloat(document.getElementById('admin-input-mrp').value) || price;
+      const expiry = document.getElementById('admin-input-expiry').value;
+      const image = document.getElementById('admin-input-image').value.trim() || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&q=80';
+      const desc = document.getElementById('admin-input-desc').value.trim();
+      const rxRequired = document.getElementById('admin-input-rx').checked;
+
+      if (!name || !price) {
+        showToast('Medicine Name and Price are mandatory', false);
+        return;
+      }
+
+      if (id) {
+        // Update existing
+        const index = state.medicines.findIndex(m => m.id === id);
+        if (index !== -1) {
+          state.medicines[index] = { id, name, salt, category, stock, price, mrp, expiry, image, desc, rxRequired };
+          showToast(`Updated ${name}`);
+        }
+      } else {
+        // Add new
+        const newId = 'med-' + Date.now();
+        state.medicines.unshift({ id: newId, name, salt, category, stock, price, mrp, expiry, image, desc, rxRequired });
+        showToast(`Added ${name} to inventory`);
+      }
+
+      saveMedicines();
+      closeAdminMedModal();
+    }
+
+    function deleteMedicine(id) {
+      const med = state.medicines.find(m => m.id === id);
+      if (!confirm(`Are you sure you want to delete ${med ? med.name : 'this medicine'}?`)) return;
+
+      state.medicines = state.medicines.filter(m => m.id !== id);
+      saveMedicines();
+      showToast('Medicine deleted from catalog');
+    }
+
+    /* ========================================================
+       ADMIN PRESCRIPTION VERIFICATION QUEUE
+       ======================================================== */
+    function renderAdminRxQueue() {
+      const container = document.getElementById('admin-rx-queue-container');
+      const pendingOrders = state.orders.filter(o => o.rxStatus === 'PENDING');
+
+      if (pendingOrders.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+            <i class="fa-solid fa-circle-check text-4xl text-emerald-400 mb-2"></i>
+            <p class="text-sm font-semibold text-slate-700">Verification Queue is Clear</p>
+            <p class="text-xs text-slate-400">All customer prescriptions have been reviewed.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = pendingOrders.map(order => {
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="font-bold text-slate-900 text-sm">${order.id}</span>
+                <span class="text-xs text-slate-400">• Customer: <strong class="text-slate-800">${order.address.name}</strong> (${order.address.phone})</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Review Required</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <!-- Prescription Image Preview -->
+              <div class="relative group cursor-pointer bg-slate-100 rounded-xl p-2 flex items-center justify-center border border-slate-200" onclick="previewRxImage('${order.rxImage}')">
+                <img src="${order.rxImage}" class="h-36 max-w-full object-contain rounded-lg">
+                <div class="absolute inset-0 bg-slate-900/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity">
+                  <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom
+                </div>
+              </div>
+
+              <!-- Required Drugs details & Actions -->
+              <div class="space-y-3">
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 text-xs">
+                  <p class="font-bold text-slate-700 mb-1">Medicines in this Order:</p>
+                  <ul class="list-disc list-inside space-y-0.5 text-slate-600">
+                    ${order.items.map(item => `
+                      <li><span class="font-semibold">${item.name}</span> (${item.qty} units) ${item.rxRequired ? '<span class="text-[9px] font-bold text-amber-700">[Rx Item]</span>' : ''}</li>
+                    `).join('')}
+                  </ul>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="verifyOrderPrescription('${order.id}', true)" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-check"></i> Approve Prescription
+                  </button>
+                  <button onclick="verifyOrderPrescription('${order.id}', false)" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-xmark"></i> Reject Prescription
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function previewRxImage(imgSrc) {
+      document.getElementById('lightbox-img').src = imgSrc;
+      document.getElementById('rx-lightbox-modal').classList.remove('hidden');
+      document.getElementById('rx-lightbox-modal').classList.add('flex');
+    }
+
+    function closeRxLightbox() {
+      document.getElementById('rx-lightbox-modal').classList.add('hidden');
+      document.getElementById('rx-lightbox-modal').classList.remove('flex');
+    }
+
+    function verifyOrderPrescription(orderId, isApproved) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      if (isApproved) {
+        order.rxStatus = 'APPROVED';
+        order.status = 'Packed & Dispatched';
+        showToast(`Prescription approved for ${order.id}. Order moved to Packed!`);
+      } else {
+        order.rxStatus = 'REJECTED';
+        order.status = 'Prescription Rejected';
+        showToast(`Prescription rejected for ${order.id}`, false);
+      }
+
+      saveOrders();
+    }
+
+    /* ========================================================
+       ADMIN ORDERS STATUS UPDATE
+       ======================================================== */
+    function renderAdminOrdersTable() {
+      const container = document.getElementById('admin-orders-table-container');
+      if (state.orders.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">No customer orders available.</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="p-3.5">Order ID</th>
+                <th class="p-3.5">Customer & Phone</th>
+                <th class="p-3.5">Amount</th>
+                <th class="p-3.5">Prescription</th>
+                <th class="p-3.5">Current Status</th>
+                <th class="p-3.5 text-right">Update Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              ${state.orders.map(order => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="p-3.5 font-bold text-slate-900">${order.id}</td>
+                  <td class="p-3.5">
+                    <p class="font-semibold text-slate-800">${order.address.name}</p>
+                    <p class="text-[10px] text-slate-400">${order.address.phone}</p>
+                  </td>
+                  <td class="p-3.5 font-black text-slate-900">₹${order.total}</td>
+                  <td class="p-3.5">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                      order.rxStatus === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                      order.rxStatus === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
+                      order.rxStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                      'text-slate-400'
+                    }">${order.rxStatus}</span>
+                  </td>
+                  <td class="p-3.5 font-semibold text-slate-700">${order.status}</td>
+                  <td class="p-3.5 text-right">
+                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="text-xs p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold">
+                      <option value="Order Placed" ${order.status === 'Order Placed' ? 'selected' : ''}>Order Placed</option>
+                      <option value="Prescription Verification" ${order.status === 'Prescription Verification' ? 'selected' : ''}>Prescription Verification</option>
+                      <option value="Packed & Dispatched" ${order.status === 'Packed & Dispatched' ? 'selected' : ''}>Packed & Dispatched</option>
+                      <option value="Out for Delivery" ${order.status === 'Out for Delivery' ? 'selected' : ''}>Out for Delivery</option>
+                      <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    </select>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+      order.status = newStatus;
+      saveOrders();
+      showToast(`Order ${order.id} status changed to "${newStatus}"`);
+    }
+
+    // Initialize application on DOM ready
+    window.addEventListener('DOMContentLoaded', initState);
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "medicare-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MediCare Medicine Delivery App on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
